@@ -1,7 +1,7 @@
 package cfdl_test
 
 import (
-	"cfdl"
+	"github.com/megaproaktiv/cfdl"
 	"context"
 	"encoding/json"
 	"fmt"

@@ -1,4 +1,4 @@
-module cfdl
+module github.com/megaproaktiv/cfdl
 
 go 1.15
 

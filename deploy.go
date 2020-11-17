@@ -9,7 +9,6 @@ import (
 
 	"github.com/alexeyco/simpletable"
 	cfn "github.com/aws/aws-sdk-go-v2/service/cloudformation"
-	"github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
 	"github.com/awslabs/goformation/v4/cloudformation"
 	tm "github.com/buger/goterm"
 )
@@ -62,11 +61,7 @@ func CreateStack(client DeployInterface,name string, template *cloudformation.Te
 
 	params := &cfn.CreateStackInput{
 		StackName: &name,
-		TemplateBody: &templateBody,
-		Capabilities: [
-			&types.CapabilityCapabilityIam
-			],
-		
+		TemplateBody: &templateBody,		
 	}
 	Logger.Info("CreateStack: ",name)
 	response, err := client.CreateStack(context.TODO(),params)
