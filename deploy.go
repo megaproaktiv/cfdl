@@ -49,11 +49,13 @@ type DeployInterface interface {
 	CreateStack(ctx context.Context, params *cfn.CreateStackInput, optFns ...func(*cfn.Options)) (*cfn.CreateStackOutput, error)
 	DescribeStackEvents(ctx context.Context, params *cfn.DescribeStackEventsInput, optFns ...func(*cfn.Options)) (*cfn.DescribeStackEventsOutput, error)
 	DeleteStack(ctx context.Context, params *cfn.DeleteStackInput, optFns ...func(*cfn.Options)) (*cfn.DeleteStackOutput, error)
-
-
+	UpdateStack(ctx context.Context, params *cfn.UpdateStackInput, optFns ...func(*cfn.Options)) (*cfn.UpdateStackOutput, error) 
 }
 
 // CreateStack first time stack creation
+// client - the aws cloudformation client
+// name - name if the Cloudformaiton template
+// template - a goformation template
 func CreateStack(client DeployInterface,name string, template *cloudformation.Template){
 	dumpTemplate(template)
 	stack, _ := template.YAML()
@@ -65,6 +67,28 @@ func CreateStack(client DeployInterface,name string, template *cloudformation.Te
 	}
 	Logger.Info("CreateStack: ",name)
 	response, err := client.CreateStack(context.TODO(),params)
+	if err != nil {
+		Logger.Error("CreateStack ",err.Error())
+		panic(err)
+	}
+	Logger.Debug("Response ",response)
+}
+
+// UpdateStack first time stack creation
+// client - the aws cloudformation client
+// name - name if the Cloudformaiton template
+// template - a goformation template
+func UpdateStack(client DeployInterface,name string, template *cloudformation.Template){
+	dumpTemplate(template)
+	stack, _ := template.YAML()
+	templateBody := string(stack)
+
+	params := &cfn.UpdateStackInput{
+		StackName: &name,
+		TemplateBody: &templateBody,		
+	}
+	Logger.Info("UpdateStack: ",name)
+	response, err := client.UpdateStack(context.TODO(),params)
 	if err != nil {
 		Logger.Error("CreateStack ",err.Error())
 		panic(err)

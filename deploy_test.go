@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"testing"
 	"time"
-
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	"gotest.tools/assert"
 )
