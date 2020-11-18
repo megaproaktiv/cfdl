@@ -175,10 +175,34 @@ dataTarget2 := map[string]cfdl.CloudFormationResource{
 			Timestamp: t3,
 		},
 }	
-	complete1 := cfdl.IsStackCompleted(dataTarget1, "CREATE_COMPLETE");
+dataTarget3 := map[string]cfdl.CloudFormationResource{
+		"testcfn" : {
+			LogicalResourceID: "testfncn",
+			PhysicalResourceID: "",
+			Status: "CREATE_COMPLETE",
+			Type: "AWS::CloudFormation::Stack",
+			Timestamp: t1,
+		},
+		"MyTopic" : {
+			LogicalResourceID: "MyTopic",
+			Status: "UPDATE_COMPLETE",
+			Type: "AWS::SNS::Topic",
+			Timestamp: t2,
+		},
+		"NotMyTopic" : {
+			LogicalResourceID: "NotMyTopic",
+			Status:"CREATE_COMPLETE",
+			Type: "AWS::SNS::Topic",
+			Timestamp: t3,
+		},
+}	
+	complete1 := cfdl.IsStackCompleted(dataTarget1);
 	assert.Equal(t,false, complete1)
 	
-	complete2 := cfdl.IsStackCompleted(dataTarget2,"CREATE_COMPLETE");
+	complete2 := cfdl.IsStackCompleted(dataTarget2);
 	assert.Equal(t,true, complete2)
+	
+	complete3 := cfdl.IsStackCompleted(dataTarget3);
+	assert.Equal(t,true, complete3)
 	
 }

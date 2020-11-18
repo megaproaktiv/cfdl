@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 	"time"
-
+	"sort"
 	"github.com/alexeyco/simpletable"
 	cfn "github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	"github.com/awslabs/goformation/v4/cloudformation"
@@ -19,6 +19,8 @@ const StatusCreateComplete="CREATE_COMPLETE"
 const StatusCreateInProgress = "CREATE_IN_PROGRESS"
 // StatusDeleteComplete CloudFormation Status
 const StatusDeleteComplete = "DELETE_COMPLETE"
+// StatusUpdateComplete text for update
+const StatusUpdateComplete = "UPDATE_COMPLETE"
 
 const (
 	// ColorDefault default color
@@ -139,13 +141,23 @@ func ShowStatus(client DeployInterface, name string, template *cloudformation.Te
 	table.SetStyle(simpletable.StyleCompactLite)
 	
 	first := true
-	for !IsStackCompleted(data,endState){
+	for !IsStackCompleted(data){
 		tm.Clear()
 		tm.MoveCursor(1,1)
 		data = PopulateData(client, name, data);
 		i = 0;
 		var statustext string
-		for id, v := range data {
+
+		// Sort
+		keys := make([]string, 0, len(data))
+		for k := range data {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		for i, k := range keys {
+			v := data[k]
+			id := data[k].LogicalResourceID
 			if( v.Status == StatusCreateComplete){
 				statustext = green(StatusCreateComplete)
 			}else if v.Status == StatusDeleteComplete {
@@ -214,9 +226,9 @@ func PopulateData(client DeployInterface, name string,data map[string]CloudForma
 }
 
 // IsStackCompleted check for everything "completed"
-func IsStackCompleted(data map[string]CloudFormationResource, endState string) bool {
+func IsStackCompleted(data map[string]CloudFormationResource) bool {
 	for _, value := range data {
-		if(value.Status != endState){
+		if(!strings.HasSuffix(value.Status , "_COMPLETE")){
 			return false
 		}
 	}
