@@ -11,6 +11,7 @@ import (
 	cfn "github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	"github.com/awslabs/goformation/v4/cloudformation"
 	tm "github.com/buger/goterm"
+	"github.com/google/uuid"
 )
 
 // StatusCreateComplete CloudFormation Status
@@ -42,6 +43,7 @@ type CloudFormationResource struct {
 	Status string
 	Type string
 	Timestamp time.Time
+	ResourceStatusReason string
 }
 
 //go:generate moq -out deploy_moq_test.go . DeployInterface
@@ -52,6 +54,8 @@ type DeployInterface interface {
 	DescribeStackEvents(ctx context.Context, params *cfn.DescribeStackEventsInput, optFns ...func(*cfn.Options)) (*cfn.DescribeStackEventsOutput, error)
 	DeleteStack(ctx context.Context, params *cfn.DeleteStackInput, optFns ...func(*cfn.Options)) (*cfn.DeleteStackOutput, error)
 	UpdateStack(ctx context.Context, params *cfn.UpdateStackInput, optFns ...func(*cfn.Options)) (*cfn.UpdateStackOutput, error) 
+	CreateChangeSet(ctx context.Context, params *cfn.CreateChangeSetInput, optFns ...func(*cfn.Options)) (*cfn.CreateChangeSetOutput, error)
+	ExecuteChangeSet(ctx context.Context, params *cfn.ExecuteChangeSetInput, optF ...func(*cfn.Options)) (*cfn.ExecuteChangeSetOutput, error)
 }
 
 // CreateStack first time stack creation
@@ -98,6 +102,35 @@ func UpdateStack(client DeployInterface,name string, template *cloudformation.Te
 	Logger.Debug("Response ",response)
 }
 
+
+// CreateChangeSet start an Change Set cycle
+func CreateChangeSet(client DeployInterface,name string, template *cloudformation.Template){
+	dumpTemplate(template)
+	stack, _ := template.YAML()
+	templateBody := string(stack)
+    uuidWithHyphen := uuid.New()
+	changeSetName := name+"-"+uuidWithHyphen.String();
+
+	//template.Resources["changesetid"] = cloudformation.NewTemplate().Metadata
+	params := &cfn.CreateChangeSetInput{
+		StackName: &name,
+		TemplateBody: &templateBody,	
+		ChangeSetName: &changeSetName,
+	}
+	Logger.Info("UpdateStack: ",name)
+	response, err := client.CreateChangeSet(context.TODO(),params)
+	if err != nil {
+		Logger.Error("CreateStack ",err.Error())
+		panic(err)
+	}
+	Logger.Debug("Response ",response)
+}
+
+// func ExecuteChangeSet(client DeployInterface,name string){
+
+// }
+
+
 // DeleteStack first time stack creation
 func DeleteStack(client DeployInterface,name string){
 
@@ -129,10 +162,12 @@ func ShowStatus(client DeployInterface, name string, template *cloudformation.Te
 	
 	// Draw
 	table := simpletable.New()
+	errorTable := simpletable.New();
+
 	table.Header = &simpletable.Header{
 		Cells: []*simpletable.Cell{
 			{Align: simpletable.AlignLeft, Text: "ID"},
-			{Align: simpletable.AlignLeft, Text: "State"},
+			{Align: simpletable.AlignLeft, Text: "Status"},
 			{Align: simpletable.AlignLeft, Text: "Type"},
 			{Align: simpletable.AlignLeft, Text: "PhysicalResourceID"},
 		},
@@ -140,12 +175,24 @@ func ShowStatus(client DeployInterface, name string, template *cloudformation.Te
 	}
 	table.SetStyle(simpletable.StyleCompactLite)
 	
+	errorTable.Header = &simpletable.Header{
+		Cells: []*simpletable.Cell{
+			{Align: simpletable.AlignLeft, Text: "ID"},
+			{Align: simpletable.AlignLeft, Text: "Status"},
+			{Align: simpletable.AlignLeft, Text: "Status Reason"},
+		},
+		
+	}
+	errorTable.SetStyle(simpletable.StyleCompactLite)
+
 	first := true
+	firstError := true
 	for !IsStackCompleted(data){
 		tm.Clear()
 		tm.MoveCursor(1,1)
 		data = PopulateData(client, name, data);
 		i = 0;
+		j := 0;
 		var statustext string
 
 		// Sort
@@ -172,15 +219,47 @@ func ShowStatus(client DeployInterface, name string, template *cloudformation.Te
 				{Align: simpletable.AlignLeft, Text: v.Type},
 				{Align: simpletable.AlignLeft, Text: v.PhysicalResourceID},
 			}
+			
+			if len(v.ResourceStatusReason) > 0  {
+				re := []*simpletable.Cell{
+					{Align: simpletable.AlignLeft, Text: id},
+					{Align: simpletable.AlignLeft, Text: statustext},
+					{Align: simpletable.AlignLeft, Text: v.ResourceStatusReason},
+				}
+				if !firstError {
+					errorTable.Body.Cells[j] = re
+				}else{
+					firstError = false
+					errorTable.Body.Cells = append(errorTable.Body.Cells,re)
+				}
+				j = j+1;
+			}
 			if !first {
 				table.Body.Cells[i]=r
-			}else{
-				table.Body.Cells = append(table.Body.Cells, r)
-			}
+				}else{
+					table.Body.Cells = append(table.Body.Cells, r)
+			}	
+
 			i = i+1;
 		}
 		first = false
 		tm.Println(table.String())
+		tm.Println()
+
+		max := len(keys)
+		current := CountCompleted(data)
+
+		tm.Print("[")
+		for i := 0; i < max; i++ {
+			if i < current {
+				tm.Print("X")
+			}else {
+				tm.Print("-")
+			}
+		}
+		tm.Println("]")
+		tm.Println()
+		tm.Println(errorTable.String())
 		tm.Flush()
 		time.Sleep(1 * time.Second) 
 	}
@@ -216,7 +295,11 @@ func PopulateData(client DeployInterface, name string,data map[string]CloudForma
 			item.Timestamp = *event.Timestamp;
 			item.PhysicalResourceID = *event.PhysicalResourceId
 			item.Type = *event.ResourceType
+			if event.ResourceStatusReason != nil {
+				item.ResourceStatusReason = *event.ResourceStatusReason
+			}
 			data[*event.LogicalResourceId] = item;
+
 			
 		}
 		
@@ -225,14 +308,31 @@ func PopulateData(client DeployInterface, name string,data map[string]CloudForma
 
 }
 
+func isComplete(status string) bool {
+	return strings.HasSuffix(status , "_COMPLETE")
+}
+
 // IsStackCompleted check for everything "completed"
 func IsStackCompleted(data map[string]CloudFormationResource) bool {
 	for _, value := range data {
-		if(!strings.HasSuffix(value.Status , "_COMPLETE")){
+		if(!isComplete(value.Status)){
 			return false
 		}
 	}
 	return true;
+}
+
+
+// CountCompleted how many completed
+func CountCompleted(data map[string]CloudFormationResource) int {
+	var count int
+	count = 0
+	for _, value := range data {
+		if isComplete(value.Status){
+			count++
+		}
+	}
+	return count
 }
 
 func red(s string) string {

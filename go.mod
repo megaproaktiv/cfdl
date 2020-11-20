@@ -9,6 +9,7 @@ require (
 	github.com/awslabs/goformation/v4 v4.15.5
 	github.com/buger/goterm v0.0.0-20200322175922-2f3e71b85129
 	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/vardius/progress-go v0.0.0-20201028080118-1ccf57052a98
 	go.uber.org/zap v1.16.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gotest.tools v2.2.0+incompatible
