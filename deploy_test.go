@@ -73,6 +73,7 @@ func TestPopulateData(t *testing.T) {
 			Status: "CREATE_IN_PROGRESS",
 			Type: "AWS::CloudFormation::Stack",
 			Timestamp: t1,
+			ResourceStatusReason: "User Initiated",
 		},
 		"MyTopic" : {
 			LogicalResourceID: "MyTopic",
@@ -80,6 +81,8 @@ func TestPopulateData(t *testing.T) {
 			Status: "CREATE_IN_PROGRESS",
 			Type: "AWS::SNS::Topic",
 			Timestamp: t2,
+			ResourceStatusReason: "Resource creation Initiated",
+
 		},
 		"NotMyTopic" : {
 			LogicalResourceID: "NotMyTopic",
@@ -87,6 +90,7 @@ func TestPopulateData(t *testing.T) {
 			Status: "CREATE_IN_PROGRESS",
 			Type: "AWS::SNS::Topic",
 			Timestamp: t3,
+			ResourceStatusReason: "Resource creation Initiated",
 		},
 	}
 	
@@ -99,6 +103,7 @@ func TestPopulateData(t *testing.T) {
 				PhysicalResourceID: "arn:aws:cloudformation:eu-central-1:012345678912:stack/testcfn/9f675870-201e-11eb-a9a9-06cc4e94edaa",
 				Status: "CREATE_COMPLETE",
 				Type: "AWS::CloudFormation::Stack",
+				ResourceStatusReason: "User Initiated",
 				Timestamp: t1,
 			},
 			"MyTopic" : {
@@ -107,6 +112,7 @@ func TestPopulateData(t *testing.T) {
 				Status: "CREATE_COMPLETE",
 				Type: "AWS::SNS::Topic",
 				Timestamp: t2,
+				ResourceStatusReason: "Resource creation Initiated",
 			},
 			"NotMyTopic" : {
 				LogicalResourceID: "NotMyTopic",
@@ -114,6 +120,7 @@ func TestPopulateData(t *testing.T) {
 				Status:"CREATE_COMPLETE",
 				Type: "AWS::SNS::Topic",
 				Timestamp: t3,
+				ResourceStatusReason: "Resource creation Initiated",
 			},
 	}
 

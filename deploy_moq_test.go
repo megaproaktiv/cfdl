@@ -19,6 +19,9 @@ var _ DeployInterface = &DeployInterfaceMock{}
 //
 //         // make and configure a mocked DeployInterface
 //         mockedDeployInterface := &DeployInterfaceMock{
+//             CreateChangeSetFunc: func(ctx context.Context, params *cloudformation.CreateChangeSetInput, optFns ...func(*cloudformation.Options)) (*cloudformation.CreateChangeSetOutput, error) {
+// 	               panic("mock out the CreateChangeSet method")
+//             },
 //             CreateStackFunc: func(ctx context.Context, params *cloudformation.CreateStackInput, optFns ...func(*cloudformation.Options)) (*cloudformation.CreateStackOutput, error) {
 // 	               panic("mock out the CreateStack method")
 //             },
@@ -27,6 +30,9 @@ var _ DeployInterface = &DeployInterfaceMock{}
 //             },
 //             DescribeStackEventsFunc: func(ctx context.Context, params *cloudformation.DescribeStackEventsInput, optFns ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error) {
 // 	               panic("mock out the DescribeStackEvents method")
+//             },
+//             ExecuteChangeSetFunc: func(ctx context.Context, params *cloudformation.ExecuteChangeSetInput, optF ...func(*cloudformation.Options)) (*cloudformation.ExecuteChangeSetOutput, error) {
+// 	               panic("mock out the ExecuteChangeSet method")
 //             },
 //             UpdateStackFunc: func(ctx context.Context, params *cloudformation.UpdateStackInput, optFns ...func(*cloudformation.Options)) (*cloudformation.UpdateStackOutput, error) {
 // 	               panic("mock out the UpdateStack method")
@@ -38,6 +44,9 @@ var _ DeployInterface = &DeployInterfaceMock{}
 //
 //     }
 type DeployInterfaceMock struct {
+	// CreateChangeSetFunc mocks the CreateChangeSet method.
+	CreateChangeSetFunc func(ctx context.Context, params *cloudformation.CreateChangeSetInput, optFns ...func(*cloudformation.Options)) (*cloudformation.CreateChangeSetOutput, error)
+
 	// CreateStackFunc mocks the CreateStack method.
 	CreateStackFunc func(ctx context.Context, params *cloudformation.CreateStackInput, optFns ...func(*cloudformation.Options)) (*cloudformation.CreateStackOutput, error)
 
@@ -47,11 +56,23 @@ type DeployInterfaceMock struct {
 	// DescribeStackEventsFunc mocks the DescribeStackEvents method.
 	DescribeStackEventsFunc func(ctx context.Context, params *cloudformation.DescribeStackEventsInput, optFns ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error)
 
+	// ExecuteChangeSetFunc mocks the ExecuteChangeSet method.
+	ExecuteChangeSetFunc func(ctx context.Context, params *cloudformation.ExecuteChangeSetInput, optF ...func(*cloudformation.Options)) (*cloudformation.ExecuteChangeSetOutput, error)
+
 	// UpdateStackFunc mocks the UpdateStack method.
 	UpdateStackFunc func(ctx context.Context, params *cloudformation.UpdateStackInput, optFns ...func(*cloudformation.Options)) (*cloudformation.UpdateStackOutput, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// CreateChangeSet holds details about calls to the CreateChangeSet method.
+		CreateChangeSet []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Params is the params argument value.
+			Params *cloudformation.CreateChangeSetInput
+			// OptFns is the optFns argument value.
+			OptFns []func(*cloudformation.Options)
+		}
 		// CreateStack holds details about calls to the CreateStack method.
 		CreateStack []struct {
 			// Ctx is the ctx argument value.
@@ -79,6 +100,15 @@ type DeployInterfaceMock struct {
 			// OptFns is the optFns argument value.
 			OptFns []func(*cloudformation.Options)
 		}
+		// ExecuteChangeSet holds details about calls to the ExecuteChangeSet method.
+		ExecuteChangeSet []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Params is the params argument value.
+			Params *cloudformation.ExecuteChangeSetInput
+			// OptF is the optF argument value.
+			OptF []func(*cloudformation.Options)
+		}
 		// UpdateStack holds details about calls to the UpdateStack method.
 		UpdateStack []struct {
 			// Ctx is the ctx argument value.
@@ -89,10 +119,51 @@ type DeployInterfaceMock struct {
 			OptFns []func(*cloudformation.Options)
 		}
 	}
+	lockCreateChangeSet     sync.RWMutex
 	lockCreateStack         sync.RWMutex
 	lockDeleteStack         sync.RWMutex
 	lockDescribeStackEvents sync.RWMutex
+	lockExecuteChangeSet    sync.RWMutex
 	lockUpdateStack         sync.RWMutex
+}
+
+// CreateChangeSet calls CreateChangeSetFunc.
+func (mock *DeployInterfaceMock) CreateChangeSet(ctx context.Context, params *cloudformation.CreateChangeSetInput, optFns ...func(*cloudformation.Options)) (*cloudformation.CreateChangeSetOutput, error) {
+	if mock.CreateChangeSetFunc == nil {
+		panic("DeployInterfaceMock.CreateChangeSetFunc: method is nil but DeployInterface.CreateChangeSet was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Params *cloudformation.CreateChangeSetInput
+		OptFns []func(*cloudformation.Options)
+	}{
+		Ctx:    ctx,
+		Params: params,
+		OptFns: optFns,
+	}
+	mock.lockCreateChangeSet.Lock()
+	mock.calls.CreateChangeSet = append(mock.calls.CreateChangeSet, callInfo)
+	mock.lockCreateChangeSet.Unlock()
+	return mock.CreateChangeSetFunc(ctx, params, optFns...)
+}
+
+// CreateChangeSetCalls gets all the calls that were made to CreateChangeSet.
+// Check the length with:
+//     len(mockedDeployInterface.CreateChangeSetCalls())
+func (mock *DeployInterfaceMock) CreateChangeSetCalls() []struct {
+	Ctx    context.Context
+	Params *cloudformation.CreateChangeSetInput
+	OptFns []func(*cloudformation.Options)
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Params *cloudformation.CreateChangeSetInput
+		OptFns []func(*cloudformation.Options)
+	}
+	mock.lockCreateChangeSet.RLock()
+	calls = mock.calls.CreateChangeSet
+	mock.lockCreateChangeSet.RUnlock()
+	return calls
 }
 
 // CreateStack calls CreateStackFunc.
@@ -209,6 +280,45 @@ func (mock *DeployInterfaceMock) DescribeStackEventsCalls() []struct {
 	mock.lockDescribeStackEvents.RLock()
 	calls = mock.calls.DescribeStackEvents
 	mock.lockDescribeStackEvents.RUnlock()
+	return calls
+}
+
+// ExecuteChangeSet calls ExecuteChangeSetFunc.
+func (mock *DeployInterfaceMock) ExecuteChangeSet(ctx context.Context, params *cloudformation.ExecuteChangeSetInput, optF ...func(*cloudformation.Options)) (*cloudformation.ExecuteChangeSetOutput, error) {
+	if mock.ExecuteChangeSetFunc == nil {
+		panic("DeployInterfaceMock.ExecuteChangeSetFunc: method is nil but DeployInterface.ExecuteChangeSet was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Params *cloudformation.ExecuteChangeSetInput
+		OptF   []func(*cloudformation.Options)
+	}{
+		Ctx:    ctx,
+		Params: params,
+		OptF:   optF,
+	}
+	mock.lockExecuteChangeSet.Lock()
+	mock.calls.ExecuteChangeSet = append(mock.calls.ExecuteChangeSet, callInfo)
+	mock.lockExecuteChangeSet.Unlock()
+	return mock.ExecuteChangeSetFunc(ctx, params, optF...)
+}
+
+// ExecuteChangeSetCalls gets all the calls that were made to ExecuteChangeSet.
+// Check the length with:
+//     len(mockedDeployInterface.ExecuteChangeSetCalls())
+func (mock *DeployInterfaceMock) ExecuteChangeSetCalls() []struct {
+	Ctx    context.Context
+	Params *cloudformation.ExecuteChangeSetInput
+	OptF   []func(*cloudformation.Options)
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Params *cloudformation.ExecuteChangeSetInput
+		OptF   []func(*cloudformation.Options)
+	}
+	mock.lockExecuteChangeSet.RLock()
+	calls = mock.calls.ExecuteChangeSet
+	mock.lockExecuteChangeSet.RUnlock()
 	return calls
 }
 

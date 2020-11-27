@@ -6,8 +6,8 @@ import (
 )
 
 // Client get a CloudFormation service client
-func Client() (*cfnservice.Client){
-	cfg, err := config.LoadDefaultConfig(config.WithRegion("eu-central-1"))
+func Client(region string)(*cfnservice.Client){
+	cfg, err := config.LoadDefaultConfig(config.WithRegion(region))
 	if err != nil {
 		panic("unable to load SDK config, " + err.Error())
 	}	

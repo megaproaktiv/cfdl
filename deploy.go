@@ -63,7 +63,7 @@ type DeployInterface interface {
 // name - name if the Cloudformaiton template
 // template - a goformation template
 func CreateStack(client DeployInterface,name string, template *cloudformation.Template){
-	dumpTemplate(template)
+	DumpTemplate(template)
 	stack, _ := template.YAML()
 	templateBody := string(stack)
 
@@ -85,7 +85,7 @@ func CreateStack(client DeployInterface,name string, template *cloudformation.Te
 // name - name if the Cloudformaiton template
 // template - a goformation template
 func UpdateStack(client DeployInterface,name string, template *cloudformation.Template){
-	dumpTemplate(template)
+	DumpTemplate(template)
 	stack, _ := template.YAML()
 	templateBody := string(stack)
 
@@ -105,7 +105,7 @@ func UpdateStack(client DeployInterface,name string, template *cloudformation.Te
 
 // CreateChangeSet start an Change Set cycle
 func CreateChangeSet(client DeployInterface,name string, template *cloudformation.Template){
-	dumpTemplate(template)
+	DumpTemplate(template)
 	stack, _ := template.YAML()
 	templateBody := string(stack)
     uuidWithHyphen := uuid.New()
@@ -351,8 +351,8 @@ func gray(s string) string {
 	return fmt.Sprintf("%s%s%s", ColorGray, s, ColorDefault)
 }
 
-// dumpTemplate for debugging
-func dumpTemplate(template *cloudformation.Template){
+// DumpTemplate for debugging
+func DumpTemplate(template *cloudformation.Template){
 	y,_ := template.YAML()
 	path := "dump"
 	fullPath := "dump/template.yaml"
