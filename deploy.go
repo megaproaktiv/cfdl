@@ -287,7 +287,7 @@ func PopulateData(client DeployInterface, name string,data map[string]CloudForma
 	// Update Status and Timestamp if newer
 	for i := 0; i < len(output.StackEvents); i++ {
 		
-		event := *output.StackEvents[i];		
+		event := output.StackEvents[i];		
 		item := data[*event.LogicalResourceId]
 
 		if( event.Timestamp.After(item.Timestamp) ){
