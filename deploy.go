@@ -355,7 +355,7 @@ func gray(s string) string {
 func DumpTemplate(template *cloudformation.Template){
 	y,_ := template.YAML()
 	path := "dump"
-	fullPath := "dump/template.yaml"
+	fullPath := "dump/template.yml"
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		os.Mkdir(path, os.ModePerm)
 	}
