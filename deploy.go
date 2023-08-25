@@ -9,7 +9,7 @@ import (
 	"sort"
 	"github.com/alexeyco/simpletable"
 	cfn "github.com/aws/aws-sdk-go-v2/service/cloudformation"
-	"github.com/awslabs/goformation/v4/cloudformation"
+	"github.com/awslabs/goformation/v7/cloudformation"
 	tm "github.com/buger/goterm"
 	"github.com/google/uuid"
 )
