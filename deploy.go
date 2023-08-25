@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
-	"sort"
+
 	"github.com/alexeyco/simpletable"
 	cfn "github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation"
 	tm "github.com/buger/goterm"
 	"github.com/google/uuid"
+	"golang.org/x/exp/slog"
 )
 
 // StatusCreateComplete CloudFormation Status
@@ -71,13 +73,13 @@ func CreateStack(client DeployInterface,name string, template *cloudformation.Te
 		StackName: &name,
 		TemplateBody: &templateBody,		
 	}
-	Logger.Info("CreateStack: ",name)
+	slog.Info("CreateStack: ",name)
 	response, err := client.CreateStack(context.TODO(),params)
 	if err != nil {
-		Logger.Error("CreateStack ",err.Error())
+		slog.Error("CreateStack ",err.Error())
 		panic(err)
 	}
-	Logger.Debug("Response ",response)
+	slog.Debug("Response ",response)
 }
 
 // UpdateStack first time stack creation
@@ -93,13 +95,13 @@ func UpdateStack(client DeployInterface,name string, template *cloudformation.Te
 		StackName: &name,
 		TemplateBody: &templateBody,		
 	}
-	Logger.Info("UpdateStack: ",name)
+	slog.Info("UpdateStack: ",name)
 	response, err := client.UpdateStack(context.TODO(),params)
 	if err != nil {
-		Logger.Error("CreateStack ",err.Error())
+		slog.Error("CreateStack ",err.Error())
 		panic(err)
 	}
-	Logger.Debug("Response ",response)
+	slog.Debug("Response ",response)
 }
 
 
@@ -117,13 +119,13 @@ func CreateChangeSet(client DeployInterface,name string, template *cloudformatio
 		TemplateBody: &templateBody,	
 		ChangeSetName: &changeSetName,
 	}
-	Logger.Info("UpdateStack: ",name)
+	slog.Info("UpdateStack: ",name)
 	response, err := client.CreateChangeSet(context.TODO(),params)
 	if err != nil {
-		Logger.Error("CreateStack ",err.Error())
+		slog.Error("CreateStack ",err.Error())
 		panic(err)
 	}
-	Logger.Debug("Response ",response)
+	slog.Debug("Response ",response)
 }
 
 // func ExecuteChangeSet(client DeployInterface,name string){
